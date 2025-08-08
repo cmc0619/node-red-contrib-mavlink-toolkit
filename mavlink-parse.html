@@ -1,0 +1,24 @@
+<script type="text/x-red" data-template-name="mavlink-parse">
+  <div class="form-row">
+    <label for="node-input-schema"><i class="fa fa-book"></i> Schema</label>
+    <input type="text" id="node-input-schema">
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="mavlink-parse">
+  <p>Parses MAVLink v2 frames into structured objects using the configured schema.</p>
+</script>
+
+<script type="text/javascript">
+  RED.nodes.registerType("mavlink-parse", {
+    category: "function",
+    color: "#D1C4E9",
+    defaults: {
+      schema: { value: "", type: "mavlink-schema", required: true }
+    },
+    inputs: 1, outputs: 1,
+    icon: "parser.svg",
+    label: function() { return "MAVLink Message Parser"; }
+  });
+</script>
+

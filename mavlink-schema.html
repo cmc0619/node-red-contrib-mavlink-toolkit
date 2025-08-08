@@ -1,0 +1,54 @@
+<script type="text/x-red" data-template-name="mavlink-schema">
+  <div class="form-row">
+    <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
+    <input type="text" id="node-config-input-name" placeholder="MAVLink Schema"/>
+  </div>
+  <div class="form-row">
+    <label for="node-config-input-dialectName"><i class="fa fa-book"></i> Dialect name</label>
+    <input type="text" id="node-config-input-dialectName" placeholder="ardupilotmega"/>
+  </div>
+  <div class="form-row">
+    <label for="node-config-input-xmlPaths"><i class="fa fa-files-o"></i> XML path(s)</label>
+    <textarea id="node-config-input-xmlPaths" rows="5" placeholder="/path/common.xml
+/path/ardupilotmega.xml"></textarea>
+    <div class="form-tips">One absolute path per line. Includes/extends are resolved automatically.</div>
+  </div>
+  <div class="form-row">
+    <label for="node-config-input-cacheDir"><i class="fa fa-folder-open"></i> Cache dir</label>
+    <input type="text" id="node-config-input-cacheDir" placeholder="~/.node-red/mavlink-cache"/>
+  </div>
+  <div class="form-row">
+    <a class="editor-button" id="btn-rebuild">Rebuild schema</a>
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="mavlink-schema">
+  <p>Config node that parses MAVLink dialect XML(s) and exposes a cached schema (enums, messages, crc extras).</p>
+</script>
+
+<script type="text/javascript">
+  (function() {
+    RED.nodes.registerType("mavlink-schema", {
+      category: "config",
+      defaults: {
+        name: { value: "" },
+        dialectName: { value: "dialect", required: true },
+        xmlPaths: { value: "", required: true },
+        cacheDir: { value: "" }
+      },
+      label: function() { return this.name || ("MAVLink Schema: " + (this.dialectName || "")); },
+      oneditprepare: function() {
+        $("#btn-rebuild").on("click", function(e) {
+          e.preventDefault();
+          $.ajax({
+            url: "mavlink-schema/rebuild",
+            method: "POST",
+            data: { configId: RED.nodes.node(this.id) ? this.id : $("#node-config-dialog-ok").data("id") }
+          }).done(() => RED.notify("Schema rebuild requested", "success"))
+            .fail((xhr)=> RED.notify("Schema rebuild failed: " + xhr.responseText, "error"));
+        }.bind(this));
+      }
+    });
+  })();
+</script>
+

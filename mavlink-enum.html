@@ -1,0 +1,105 @@
+<script type="text/x-red" data-template-name="mavlink-enum">
+  <div class="form-row">
+    <label for="node-input-schema"><i class="fa fa-book"></i> Schema</label>
+    <input type="text" id="node-input-schema">
+  </div>
+  <div class="form-row">
+    <label for="node-input-enumName"><i class="fa fa-list"></i> Enum</label>
+    <select id="node-input-enumName"></select>
+    <a class="editor-button" id="btn-refresh">Refresh</a>
+  </div>
+  <div class="form-row">
+    <label for="node-input-keySource"><i class="fa fa-exchange"></i> Key source</label>
+    <select id="node-input-keySource">
+      <option value="config">Pick in editor</option>
+      <option value="msg">From msg</option>
+      <option value="flow">From flow</option>
+      <option value="global">From global</option>
+    </select>
+  </div>
+  <div class="form-row row-config-key">
+    <label for="node-input-enumKey"><i class="fa fa-tag"></i> Key</label>
+    <select id="node-input-enumKey"></select>
+  </div>
+  <div class="form-row row-dyn-key">
+    <label for="node-input-keyField"><i class="fa fa-code"></i> Property</label>
+    <input type="text" id="node-input-keyField" placeholder="payload">
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="mavlink-enum">
+  <p>Select an enum from the MAVLink schema and output its numeric value.</p>
+</script>
+
+<script type="text/javascript">
+  (function() {
+    function loadEnums(configId) {
+      return $.getJSON("mavlink-schema/enums", { configId });
+    }
+    function loadMembers(configId, enumName) {
+      return $.getJSON("mavlink-schema/enum-members", { configId, enumName });
+    }
+    RED.nodes.registerType("mavlink-enum", {
+      category: "function",
+      color: "#C7E9C0",
+      defaults: {
+        schema: { value: "", type: "mavlink-schema", required: true },
+        enumName: { value: "", required: true },
+        enumKey: { value: "" },
+        keySource: { value: "config" },
+        keyField: { value: "payload" }
+      },
+      inputs: 1, outputs: 1,
+      icon: "font-awesome/fa-list",
+      label: function() {
+        const src = this.keySource === "config" ? (this.enumKey||"key") : ("prop:"+ (this.keyField||"payload"));
+        return `MAVLink Enum • ${this.enumName||"enum"} • ${src}`;
+      },
+      oneditprepare: function() {
+        const $schema = $("#node-input-schema");
+        const $enum = $("#node-input-enumName");
+        const $key = $("#node-input-enumKey");
+        const $src = $("#node-input-keySource");
+        const $prop = $("#node-input-keyField");
+        const $btn = $("#btn-refresh");
+
+        function toggle() {
+          const conf = $src.val() === "config";
+          $(".row-config-key").toggle(conf);
+          $(".row-dyn-key").toggle(!conf);
+        }
+        $src.on("change", toggle); toggle();
+
+        function populateEnums(sel) {
+          const cfgId = $schema.val();
+          if (!cfgId) return;
+          $enum.empty().append($("<option/>").text("Loading...").val(""));
+          loadEnums(cfgId).done(data => {
+            $enum.empty();
+            (data.enums||[]).forEach(n => $enum.append($("<option/>").text(n).val(n)));
+            if (sel) $enum.val(sel);
+            $enum.trigger("change");
+          });
+        }
+        function populateMembers(sel) {
+          const cfgId = $schema.val(), en = $enum.val();
+          $key.empty().append($("<option/>").text("Loading...").val(""));
+          loadMembers(cfgId, en).done(data=>{
+            $key.empty();
+            (data.members||[]).forEach(m=>{
+              const label = m.comment ? `${m.key} = ${m.value} // ${m.comment}` : `${m.key} = ${m.value}`;
+              $key.append($("<option/>").text(label).val(m.key));
+            });
+            if (sel) $key.val(sel);
+          });
+        }
+        $enum.on("change", ()=> populateMembers($("#node-input-enumKey").val()));
+        $schema.on("change", ()=> populateEnums($("#node-input-enumName").val()));
+        $btn.on("click", (e)=>{ e.preventDefault(); populateEnums($("#node-input-enumName").val()); });
+
+        if ($schema.val()) populateEnums($("#node-input-enumName").val());
+      }
+    });
+  })();
+</script>
+

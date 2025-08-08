@@ -1,0 +1,66 @@
+<script type="text/x-red" data-template-name="mavlink-io">
+  <div class="form-row">
+    <label for="node-input-mode"><i class="fa fa-exchange"></i> Mode</label>
+    <select id="node-input-mode">
+      <option value="udp">UDP</option>
+      <option value="serial">Serial</option>
+    </select>
+  </div>
+
+  <div class="form-row mode-udp">
+    <label for="node-input-localPort"><i class="fa fa-plug"></i> Local port</label>
+    <input type="number" id="node-input-localPort" placeholder="14550">
+  </div>
+  <div class="form-row mode-udp">
+    <label for="node-input-remoteHost"><i class="fa fa-cloud"></i> Remote host</label>
+    <input type="text" id="node-input-remoteHost" placeholder="127.0.0.1">
+  </div>
+  <div class="form-row mode-udp">
+    <label for="node-input-remotePort"><i class="fa fa-share"></i> Remote port</label>
+    <input type="number" id="node-input-remotePort" placeholder="14551">
+  </div>
+
+  <div class="form-row mode-serial">
+    <label for="node-input-serialPath"><i class="fa fa-usb"></i> Serial path</label>
+    <input type="text" id="node-input-serialPath" placeholder="/dev/ttyUSB0">
+  </div>
+  <div class="form-row mode-serial">
+    <label for="node-input-baud"><i class="fa fa-tachometer"></i> Baud</label>
+    <input type="number" id="node-input-baud" placeholder="57600">
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="mavlink-io">
+  <p>Low-level MAVLink I/O. Emits raw buffers as <code>msg.payload</code>; writes any incoming buffer out.</p>
+</script>
+
+<script type="text/javascript">
+  (function() {
+    function toggle() {
+      const mode = $("#node-input-mode").val();
+      $(".mode-udp").toggle(mode === "udp");
+      $(".mode-serial").toggle(mode === "serial");
+    }
+    RED.nodes.registerType("mavlink-io", {
+      category: "network",
+      color: "#B3E5FC",
+      defaults: {
+        mode: { value: "udp" },
+        localPort: { value: 14550, required: true },
+        remoteHost: { value: "127.0.0.1", required: true },
+        remotePort: { value: 14551, required: true },
+        serialPath: { value: "/dev/ttyUSB0" },
+        baud: { value: 57600 }
+      },
+      inputs: 1,
+      outputs: 1,
+      icon: "bridge.svg",
+      label: function() { return `MAVLink I/O (${this.mode})`; },
+      oneditprepare: function() {
+        $("#node-input-mode").on("change", toggle);
+        toggle();
+      }
+    });
+  })();
+</script>
+

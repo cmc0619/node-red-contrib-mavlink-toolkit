@@ -1,0 +1,67 @@
+<script type="text/x-red" data-template-name="mavlink-build">
+  <div class="form-row">
+    <label for="node-input-schema"><i class="fa fa-book"></i> Schema</label>
+    <input type="text" id="node-input-schema">
+  </div>
+  <div class="form-row">
+    <label for="node-input-messageName"><i class="fa fa-envelope"></i> Message</label>
+    <select id="node-input-messageName"></select>
+    <a class="editor-button" id="btn-refresh">Refresh</a>
+  </div>
+  <div class="form-row">
+    <label for="node-input-sysid"><i class="fa fa-id-badge"></i> SYSID</label>
+    <input type="number" id="node-input-sysid" placeholder="1">
+  </div>
+  <div class="form-row">
+    <label for="node-input-compid"><i class="fa fa-id-card-o"></i> COMPID</label>
+    <input type="number" id="node-input-compid" placeholder="1">
+  </div>
+  <div class="form-tips">
+    Provide the <b>payload object</b> on <code>msg.payload</code> matching field names/types. Optional overrides: <code>msg.sysid</code>, <code>msg.compid</code>.
+  </div>
+</script>
+
+<script type="text/x-red" data-help-name="mavlink-build">
+  <p>Builds a MAVLink v2 frame from a message name and payload object.</p>
+</script>
+
+<script type="text/javascript">
+  (function() {
+    function loadMessages(configId) {
+      return $.getJSON("mavlink-schema/messages", { configId });
+    }
+    RED.nodes.registerType("mavlink-build", {
+      category: "function",
+      color: "#FFECB3",
+      defaults: {
+        schema: { value: "", type: "mavlink-schema", required: true },
+        messageName: { value: "", required: true },
+        sysid: { value: 1 },
+        compid: { value: 1 }
+      },
+      inputs: 1, outputs: 1,
+      icon: "font-awesome/fa-cubes",
+      label: function() { return `MAVLink Build • ${this.messageName||"message"}`; },
+      oneditprepare: function() {
+        const $schema = $("#node-input-schema");
+        const $msg = $("#node-input-messageName");
+        const $btn = $("#btn-refresh");
+
+        function populate(sel) {
+          const cfgId = $schema.val();
+          if (!cfgId) return;
+          $msg.empty().append($("<option/>").text("Loading...").val(""));
+          loadMessages(cfgId).done(data => {
+            $msg.empty();
+            (data.messages||[]).forEach(m => $msg.append($("<option/>").text(`${m.name} (${m.id})`).val(m.name)));
+            if (sel) $msg.val(sel);
+          });
+        }
+        $schema.on("change", ()=> populate($("#node-input-messageName").val()));
+        $btn.on("click", (e)=>{ e.preventDefault(); populate($("#node-input-messageName").val()); });
+        if ($schema.val()) populate($("#node-input-messageName").val());
+      }
+    });
+  })();
+</script>
+
