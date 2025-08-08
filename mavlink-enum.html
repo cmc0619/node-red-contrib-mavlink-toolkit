@@ -4,6 +4,10 @@
     <input type="text" id="node-input-schema">
   </div>
   <div class="form-row">
+    <label for="enum-search"><i class="fa fa-search"></i> Filter</label>
+    <input type="text" id="enum-search" placeholder="type to filter">
+  </div>
+  <div class="form-row">
     <label for="node-input-enumName"><i class="fa fa-list"></i> Enum</label>
     <select id="node-input-enumName"></select>
     <a class="editor-button" id="btn-refresh">Refresh</a>
@@ -62,6 +66,7 @@
         const $src = $("#node-input-keySource");
         const $prop = $("#node-input-keyField");
         const $btn = $("#btn-refresh");
+        const $search = $("#enum-search");
 
         function toggle() {
           const conf = $src.val() === "config";
@@ -96,6 +101,13 @@
         $enum.on("change", ()=> populateMembers($("#node-input-enumKey").val()));
         $schema.on("change", ()=> populateEnums($("#node-input-enumName").val()));
         $btn.on("click", (e)=>{ e.preventDefault(); populateEnums($("#node-input-enumName").val()); });
+        $search.on("keyup", function() {
+          const term = $(this).val().toLowerCase();
+          $enum.children().each(function(){
+            const txt = $(this).text().toLowerCase();
+            $(this).toggle(!term || txt.indexOf(term) !== -1);
+          });
+        });
 
         if ($schema.val()) populateEnums($("#node-input-enumName").val());
       }
