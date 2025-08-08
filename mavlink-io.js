@@ -1,5 +1,6 @@
 module.exports = function(RED) {
   const dgram = require("dgram");
+  const { scanFramesV2 } = require("./lib/mavlink-helpers");
   let SerialPort;
   try { SerialPort = require("serialport").SerialPort; } catch(_) {}
 
@@ -15,17 +16,29 @@ module.exports = function(RED) {
     node.baud = Number(config.baud || 57600);
 
     let udpSock = null, serial = null;
+    let rxBuf = Buffer.alloc(0);
 
-    function handleIncoming(buf) {
-      const msg = { topic: "mavlink/raw", payload: Buffer.from(buf) };
-      node.send(msg);
+    function handleIncoming(chunk) {
+      rxBuf = Buffer.concat([rxBuf, chunk]);
+      let lastEnd = 0;
+      for (const f of scanFramesV2(rxBuf)) {
+        const frame = Buffer.from(f.frameBuf);
+        const msgid = frame[7] | (frame[8] << 8) | (frame[9] << 16);
+        const msg = { topic: "mavlink/raw", payload: frame };
+        if (msgid === 0) node.send([msg, null]);
+        else node.send([null, msg]);
+        lastEnd = f.end;
+      }
+      if (lastEnd > 0) rxBuf = rxBuf.subarray(lastEnd);
     }
 
     if (node.mode === "udp") {
       udpSock = dgram.createSocket("udp4");
       udpSock.on("message", handleIncoming);
       udpSock.on("error", err => node.error(err));
-      udpSock.bind(node.localPort, ()=> node.status({ fill:"green", shape:"dot", text:`udp ${node.localPort} ↔ ${node.remoteHost}:${node.remotePort}`}));
+      udpSock.bind(node.localPort, () =>
+        node.status({ fill: "green", shape: "dot", text: `udp ${node.localPort} ↔ ${node.remoteHost}:${node.remotePort}` })
+      );
     } else if (node.mode === "serial") {
       if (!SerialPort) {
         node.status({ fill:"red", shape:"dot", text:"serialport module not installed" });
@@ -33,7 +46,9 @@ module.exports = function(RED) {
       } else {
         serial = new SerialPort({ path: node.serialPath, baudRate: node.baud });
         serial.on("data", handleIncoming);
-        serial.on("open", ()=> node.status({ fill:"green", shape:"dot", text:`serial ${node.serialPath} @ ${node.baud}` }));
+        serial.on("open", () =>
+          node.status({ fill:"green", shape:"dot", text:`serial ${node.serialPath} @ ${node.baud}` })
+        );
         serial.on("error", err => node.error(err));
       }
     }
@@ -53,8 +68,8 @@ module.exports = function(RED) {
     node.on("close", (done) => {
       try {
         if (udpSock) udpSock.close();
-        if (serial) serial.close(()=>{});
-      } catch(_) {}
+        if (serial) serial.close(() => {});
+      } catch (_) {}
       done();
     });
   }
