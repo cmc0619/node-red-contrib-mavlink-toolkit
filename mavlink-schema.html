@@ -3,27 +3,51 @@
     <label for="node-config-input-name"><i class="fa fa-tag"></i> Name</label>
     <input type="text" id="node-config-input-name" placeholder="MAVLink Schema"/>
   </div>
+
   <div class="form-row">
     <label for="node-config-input-dialectName"><i class="fa fa-book"></i> Dialect name</label>
     <input type="text" id="node-config-input-dialectName" placeholder="ardupilotmega"/>
   </div>
+
   <div class="form-row">
     <label for="node-config-input-xmlPaths"><i class="fa fa-files-o"></i> XML path(s)</label>
-    <textarea id="node-config-input-xmlPaths" rows="5" placeholder="/path/common.xml
-/path/ardupilotmega.xml"></textarea>
-    <div class="form-tips">One absolute path per line. Includes/extends are resolved automatically.</div>
+    <textarea id="node-config-input-xmlPaths" rows="5" placeholder="/abs/path/common.xml
+/abs/path/ardupilotmega.xml"></textarea>
+    <div class="form-tips">One absolute path per line. (Optional when Auto-download is enabled.)</div>
   </div>
+
   <div class="form-row">
     <label for="node-config-input-cacheDir"><i class="fa fa-folder-open"></i> Cache dir</label>
     <input type="text" id="node-config-input-cacheDir" placeholder="~/.node-red/mavlink-cache"/>
   </div>
+
+  <div class="form-row">
+    <label><i class="fa fa-download"></i> Auto-download</label>
+    <input type="checkbox" id="node-config-input-autoDownload" style="vertical-align:middle">
+  </div>
+
+  <div class="form-row auto-dl">
+    <label for="node-config-input-repo"><i class="fa fa-github"></i> Repo</label>
+    <input type="text" id="node-config-input-repo" placeholder="mavlink/mavlink">
+  </div>
+
+  <div class="form-row auto-dl">
+    <label for="node-config-input-ref"><i class="fa fa-code-fork"></i> Ref</label>
+    <input type="text" id="node-config-input-ref" placeholder="master">
+  </div>
+
+  <div class="form-row auto-dl">
+    <label for="node-config-input-subdir"><i class="fa fa-folder"></i> Subdir</label>
+    <input type="text" id="node-config-input-subdir" placeholder="message_definitions/v1.0">
+  </div>
+
   <div class="form-row">
     <a class="editor-button" id="btn-rebuild">Rebuild schema</a>
   </div>
 </script>
 
 <script type="text/x-red" data-help-name="mavlink-schema">
-  <p>Config node that parses MAVLink dialect XML(s) and exposes a cached schema (enums, messages, crc extras).</p>
+  <p>Config node that parses MAVLink dialect XML(s), with optional auto-download from GitHub, and exposes a cached schema (enums, messages, crc extras) to other nodes.</p>
 </script>
 
 <script type="text/javascript">
@@ -33,19 +57,31 @@
       defaults: {
         name: { value: "" },
         dialectName: { value: "dialect", required: true },
-        xmlPaths: { value: "", required: true },
-        cacheDir: { value: "" }
+        xmlPaths: { value: "" },
+        cacheDir: { value: "" },
+        autoDownload: { value: true },
+        repo: { value: "mavlink/mavlink" },
+        ref: { value: "master" },
+        subdir: { value: "message_definitions/v1.0" }
       },
       label: function() { return this.name || ("MAVLink Schema: " + (this.dialectName || "")); },
       oneditprepare: function() {
+        function toggle() {
+          const on = $("#node-config-input-autoDownload").is(":checked");
+          $(".auto-dl").toggle(on);
+        }
+        $("#node-config-input-autoDownload").on("change", toggle);
+        toggle();
+
         $("#btn-rebuild").on("click", function(e) {
           e.preventDefault();
+          const cfgId = $("#node-config-dialog-ok").data("node-id") || RED.nodes.node(this.id)?.id;
           $.ajax({
             url: "mavlink-schema/rebuild",
             method: "POST",
-            data: { configId: RED.nodes.node(this.id) ? this.id : $("#node-config-dialog-ok").data("id") }
+            data: { configId: cfgId }
           }).done(() => RED.notify("Schema rebuild requested", "success"))
-            .fail((xhr)=> RED.notify("Schema rebuild failed: " + xhr.responseText, "error"));
+            .fail((xhr)=> RED.notify("Schema rebuild failed: " + (xhr.responseJSON?.error || xhr.responseText), "error"));
         }.bind(this));
       }
     });

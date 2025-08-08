@@ -1,6 +1,6 @@
 {
   "name": "node-red-contrib-mavlink-toolkit",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Node-RED MAVLink toolkit: schema (XML->JSON), IO (UDP/Serial), parse, enum, build.",
   "keywords": ["node-red", "mavlink", "uav", "ardupilot", "px4"],
   "author": "you",
@@ -16,8 +16,10 @@
   },
   "engines": { "node": ">=16.0.0" },
   "dependencies": {
+    "adm-zip": "^0.5.12",
     "fast-xml-parser": "^4.4.1",
-    "mkdirp": "^3.0.1"
+    "mkdirp": "^3.0.1",
+    "node-fetch": "^3.3.2"
   },
   "optionalDependencies": {
     "serialport": "^12.0.0"
