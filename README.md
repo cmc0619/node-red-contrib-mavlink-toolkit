@@ -2,7 +2,7 @@
 
 A modular MAVLink toolkit for Node‑RED:
 
-- **mavlink-schema (config):** point at MAVLink dialect XML(s). Builds a cached `schema.json` (enums + messages + crc extras).
+- **mavlink-schema (config):** point at MAVLink dialect XML(s). Builds a cached `schema.json` (enums + messages + crc extras) with no dependency on external MAVLink libraries.
 - **mavlink-io:** UDP or Serial transport of raw MAVLink frames. Output&nbsp;1 carries <code>HEARTBEAT</code> (msgid&nbsp;0); output&nbsp;2 carries all others.
 - **mavlink-parse:** parses MAVLink v2 frames into structured objects using the schema.
 - **mavlink-enum:** dropdown selector for enum values from the schema.
@@ -13,5 +13,5 @@ A modular MAVLink toolkit for Node‑RED:
 2. `cd ~/.node-red/node-red-contrib-mavlink-toolkit && npm install`
 3. Restart Node‑RED
 
-To enable Serial in `mavlink-io`, also:
+To enable Serial in `mavlink-io`, also run `npm install serialport`.
 
